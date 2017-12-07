@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.conf import settings
+from django.utils.six import python_2_unicode_compatible
 from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.sites.models import Site
@@ -22,6 +23,7 @@ from grimoire.django.tracked.models.polymorphic import TrackedLive as Polymorphi
 #######################################################################
 
 
+@python_2_unicode_compatible
 class SiteSetting(TrackedLive):
     """
     A site setting helps us extend an existing site by adding
@@ -33,7 +35,7 @@ class SiteSetting(TrackedLive):
     """
 
     site = models.OneToOneField(Site, null=False)
-    index = models.ForeignKey('SiteResource', null=True,
+    index = models.ForeignKey('SiteResource', null=True, blank=True,
                               help_text=_('Specifying an index page will make such page accessible '
                                           'as the / (root) url in the related site. The page would '
                                           'also be accessible via its url'))
@@ -46,7 +48,11 @@ class SiteSetting(TrackedLive):
             raise ValidationError('The specified resource as site\'s index does not '
                                   'belong to this setting')
 
+    def __str__(self):
+        return "%s' setting" % self.site
 
+
+@python_2_unicode_compatible
 class SiteResource(PolymorphicTrackedLive):
     """
     We will be adding these resources from the administration.
@@ -81,6 +87,9 @@ class SiteResource(PolymorphicTrackedLive):
 
     class Meta:
         unique_together = (('setting', 'url_code'),)
+
+    def __str__(self):
+        return '%s/%s' % (self.setting.site, '' if self.setting.index == self else self.url_code)
 
 
 class SiteResourceAlias(SiteResource):
@@ -141,6 +150,7 @@ class SiteConcreteResource(SiteResource):
             self.visits.create(visited_from=self._get_client_ip(request))
 
 
+@python_2_unicode_compatible
 class SiteConcreteResourceVisit(PolymorphicModel):
     """
     A visit to the site.
@@ -149,3 +159,6 @@ class SiteConcreteResourceVisit(PolymorphicModel):
     resource = models.ForeignKey('SiteConcreteResource', null=False, related_name='visits')
     visited_on = models.DateTimeField(default=now, null=False)
     visited_from = models.GenericIPAddressField(null=False)
+
+    def __str__(self):
+        return '%s from %s' % (self.visited_on.strftime('%Y-%m-%d %H:%M:%S'), self.visited_from)
