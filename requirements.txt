@@ -1,0 +1,17 @@
+Django==1.11.4
+### Perhaps your app will use MySQL? Perhaps other db like PostgreSQL?
+MySQL-python==1.2.5
+### If you upload images, you must uncomment the next one, and if using thumbnails, the second one
+Pillow==3.4.2
+# sorl-thumbnail==12.3
+### Do not touch the following ones unless you need to update the packages. You will need all of them
+### There is -most of the times, a conflict between polymorphic and the current Django version. Beware.
+XlsxWriter==0.9.3
+django-bootstrap3==9.0.0
+django-dynsettings-ritual==0.0.7
+django-polymorphic==1.3
+django-trackmodels-ritual==0.0.13
+django-trackmodels-xls-ritual==0.0.3
+django-xmail-ritual==0.0.14
+### Perhaps your app will use rest support?
+djangorestframework==3.5.1
