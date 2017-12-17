@@ -23,11 +23,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('visited_on', models.DateTimeField(default=django.utils.timezone.now)),
                 ('visited_from', models.GenericIPAddressField()),
-                ('polymorphic_ctype', models.ForeignKey(editable=False, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='polymorphic_manysites.siteconcreteresourcevisit_set+', to='contenttypes.ContentType')),
             ],
-            options={
-                'abstract': False,
-            },
         ),
         migrations.CreateModel(
             name='SiteResource',

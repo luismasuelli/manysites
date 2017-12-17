@@ -151,7 +151,7 @@ class SiteConcreteResource(SiteResource):
 
 
 @python_2_unicode_compatible
-class SiteConcreteResourceVisit(PolymorphicModel):
+class SiteConcreteResourceVisit(models.Model):
     """
     A visit to the site.
     """
