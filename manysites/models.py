@@ -195,11 +195,13 @@ class SiteAsset(PolymorphicModel):
         return format_html('&nbsp;')
     preview.short_description = _('Content Preview')
 
-    def __str__(self):
+    def _to_str(self):
         return '%s/%s' % (self.bundle, self.code)
 
+    def __str__(self):
+        return self._to_str()
 
-@python_2_unicode_compatible
+
 class ImageAsset(SiteAsset):
     """
     This type of asset involves only images.
@@ -215,11 +217,10 @@ class ImageAsset(SiteAsset):
                            self.image.url)
     preview.short_description = _('Content Preview')
 
-    def __str__(self):
-        return '%s (image)' % (super(ImageAsset, self).__str__(),)
+    def _to_str(self):
+        return '%s (image)' % (super(ImageAsset, self)._to_str(),)
 
 
-@python_2_unicode_compatible
 class TextAsset(SiteAsset):
     """
     This type of asset involves only text. The text will be stored as content in the
@@ -242,8 +243,8 @@ class TextAsset(SiteAsset):
         else:
             return self.content
 
-    def __str__(self):
-        return '%s (text)' % (super(TextAsset, self).__str__(),)
+    def _to_str(self):
+        return '%s (text)' % (super(TextAsset, self)._to_str(),)
 
 
 @python_2_unicode_compatible
