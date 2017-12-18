@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.conf import settings
+from django.utils.html import format_html
 from django.utils.six import python_2_unicode_compatible
 from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy as _
@@ -49,7 +50,7 @@ class SiteSetting(TrackedLive):
                                   'belong to this setting')
 
     def __str__(self):
-        return "%s' setting" % self.site
+        return "%s site's setting" % self.site
 
 
 @python_2_unicode_compatible
@@ -148,6 +149,101 @@ class SiteConcreteResource(SiteResource):
 
         if self.log_visits:
             self.visits.create(visited_from=self._get_client_ip(request))
+
+
+@python_2_unicode_compatible
+class SiteBundle(models.Model):
+    """
+    An asset bundle is tied to a site in particular.
+
+    It will hold assets that will be useful across the entire website.
+
+    The bundle will be used to allow something like:
+
+        {% site_asset 'image' '<bundle>/<asset>' %}
+    """
+
+    setting = models.ForeignKey(SiteSetting, null=False)
+    code = models.SlugField(max_length=255, null=False, blank=True)
+    title = models.CharField(max_length=127, null=False, blank=False)
+    description = models.CharField(max_length=255, null=False, blank=True)
+
+    @property
+    def is_default(self):
+        return self.code == ''
+
+    class Meta:
+        unique_together = (('setting', 'code'),)
+
+    def __str__(self):
+        return '%s/%s' % (self.setting.site, self.code or '<default>')
+
+
+@python_2_unicode_compatible
+class SiteAsset(PolymorphicModel):
+    """
+    Assets in a bundle can be of types: css, js, image.
+    """
+
+    bundle = models.ForeignKey(SiteBundle, null=False)
+    code = models.SlugField(max_length=255, null=False, blank=False)
+
+    class Meta:
+        unique_together = (('bundle', 'code'),)
+
+    def preview(self):
+        return format_html('&nbsp;')
+    preview.short_description = _('Content Preview')
+
+    def __str__(self):
+        return '%s/%s' % (self.bundle, self.code)
+
+
+@python_2_unicode_compatible
+class ImageAsset(SiteAsset):
+    """
+    This type of asset involves only images.
+    """
+
+    image = models.ImageField(upload_to='bundle/images', null=False, blank=False,
+                              width_field='width', height_field='height')
+    width = models.PositiveIntegerField(null=False, editable=False)
+    height = models.PositiveIntegerField(null=False, editable=False)
+
+    def preview(self):
+        return format_html('<img class="admin-image-asset-thumbnail" src="{0}" />',
+                           self.image.url)
+    preview.short_description = _('Content Preview')
+
+    def __str__(self):
+        return '%s (image)' % (super(ImageAsset, self).__str__(),)
+
+
+@python_2_unicode_compatible
+class TextAsset(SiteAsset):
+    """
+    This type of asset involves only text. The text will be stored as content in the
+      database, instead of as a separate file.
+    """
+
+    SUBTYPES = (
+        ('plain', _('Plain')),
+        ('javascript',_('Javascript')),
+        ('css', _('CSS')),
+    )
+    PREVIEW_TEXT_SIZE = 63
+
+    content = models.TextField(null=False, blank=True)
+    content_subtype = models.CharField(max_length=10, choices=SUBTYPES, null=False, blank=False)
+
+    def preview(self):
+        if len(self.content) > self.PREVIEW_TEXT_SIZE:
+            return "%s..." % self.content[:self.PREVIEW_TEXT_SIZE]
+        else:
+            return self.content
+
+    def __str__(self):
+        return '%s (text)' % (super(TextAsset, self).__str__(),)
 
 
 @python_2_unicode_compatible
